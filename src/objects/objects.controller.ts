@@ -64,7 +64,7 @@ export class ObjectsController {
     description: 'Объект с указанным id не найден.'
   })
   findOne(@Param('id', new ParseIntPipe()) id: number): Promise<ObjectEntity> {
-    return this.objectsService.findOne(+id);
+    return this.objectsService.findOne(id);
   }
 
   @Patch(':id')
@@ -92,7 +92,7 @@ export class ObjectsController {
     description: 'Объект с указанным id не найден.'
   })
   remove(@Param('id', new ParseIntPipe()) id: number): Promise<ObjectEntity> {
-    return this.objectsService.remove(+id);
+    return this.objectsService.remove(id);
   }
 
   @Get(':id/owners')
@@ -107,7 +107,7 @@ export class ObjectsController {
     @Param('id', new ParseIntPipe()) id: number,
     @Pagination() pagination: PaginationDto
   ): Promise<PaginationResultDto<WithOwnerEntity>> {
-    return this.objectsService.getOwners(+id, pagination);
+    return this.objectsService.getOwners(id, pagination);
   }
 
   @Post(':id/owners')
@@ -125,7 +125,7 @@ export class ObjectsController {
     @Param('id', new ParseIntPipe()) id: number,
     @Body() { id: userId }: CreateOwnerDto
   ): Promise<CoOwnerEntity> {
-    return this.objectsService.addOwner(+id, userId);
+    return this.objectsService.addOwner(id, userId);
   }
 
   @Delete(':id/owners/:userId')
@@ -146,6 +146,6 @@ export class ObjectsController {
     @Param('id', new ParseIntPipe()) id: number,
     @Param('userId') userId: string
   ): Promise<CoOwnerEntity> {
-    return this.objectsService.removeOwner(+id, userId);
+    return this.objectsService.removeOwner(id, userId);
   }
 }
