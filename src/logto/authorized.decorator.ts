@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
   UseGuards
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOAuth2 } from '@nestjs/swagger';
 
 import { ApiExceptionClass } from 'common/api-exception-class.decorator';
 
@@ -18,7 +18,7 @@ export const Authorized = (
     UseGuards(JwtGuard),
     SetMetadata('scopes', scopes),
     UseGuards(ScopeGuard),
-    ApiBearerAuth('logtoJwt'),
+    ApiOAuth2(scopes),
     ApiExceptionClass(() => UnauthorizedException, {
       description: 'Не был передан access token.'
     })

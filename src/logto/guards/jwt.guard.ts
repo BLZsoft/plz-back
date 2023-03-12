@@ -32,7 +32,7 @@ export class JwtGuard implements CanActivate {
 
       const { payload } = await jwtVerify(
         token,
-        createRemoteJWKSet(this.logtoConfig.jwksUri),
+        createRemoteJWKSet(this.logtoConfig.jwksUrl),
         {
           issuer: this.logtoConfig.issuer,
           audience: this.logtoConfig.audience
