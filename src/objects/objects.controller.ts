@@ -26,6 +26,7 @@ import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
 import { CoOwnerEntity, WithOwnerEntity } from './entities/owner.entity';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
+import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
 import { OwnerDeletionException } from './exceptions/owner-deletion.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
 import { ObjectsService } from './objects.service';
@@ -116,6 +117,9 @@ export class ObjectsController {
   @ApiCreatedResponse({
     description: 'Добавляет пользователя к объекту.',
     type: CoOwnerEntity
+  })
+  @ApiException(() => OwnerAlreadyExistsException, {
+    description: 'Пользователь уже имеет доступ к объекту.'
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
