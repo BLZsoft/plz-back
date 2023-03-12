@@ -8,6 +8,7 @@ import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
 import { WithOwnerEntity } from './entities/owner.entity';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
+import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
 import { OwnerDeletionException } from './exceptions/owner-deletion.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
 
@@ -65,32 +66,28 @@ export class ObjectsService {
     id: number,
     updateObjectDto: UpdateObjectDto
   ): Promise<ObjectEntity> {
-    const result = await this.prisma.object.update({
-      where: {
-        id
-      },
-      data: updateObjectDto
-    });
-
-    if (!result) {
+    try {
+      return await this.prisma.object.update({
+        where: {
+          id
+        },
+        data: updateObjectDto
+      });
+    } catch {
       throw new ObjectNotFoundException();
     }
-
-    return result;
   }
 
   async remove(id: number): Promise<ObjectEntity> {
-    const result = await this.prisma.object.delete({
-      where: {
-        id
-      }
-    });
-
-    if (!result) {
+    try {
+      return await this.prisma.object.delete({
+        where: {
+          id
+        }
+      });
+    } catch {
       throw new ObjectNotFoundException();
     }
-
-    return result;
   }
 
   async getOwners(
@@ -129,16 +126,21 @@ export class ObjectsService {
   async addOwner(id: number, userId: string): Promise<WithOwnerEntity> {
     //TODO: Logto managment API request to check if user exists
 
-    const result = await this.prisma.object.update({
-      where: {
-        id
-      },
-      data: {
-        owners: {
-          create: [{ userId }]
+    let result: ObjectEntity;
+    try {
+      result = await this.prisma.object.update({
+        where: {
+          id
+        },
+        data: {
+          owners: {
+            create: [{ userId }]
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      throw new OwnerAlreadyExistsException();
+    }
 
     if (!result) {
       throw new ObjectNotFoundException();

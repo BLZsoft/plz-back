@@ -8,6 +8,7 @@ export default createModel('OwnersOnObject', (OwnershipModel) => {
     .relation('object', ObjectModel, {
       fields: ['objectId'],
       references: ['id'],
+      onDelete: 'Cascade'
     })
     .boolean('author', { default: false })
     .id({ fields: ['userId', 'objectId'] });

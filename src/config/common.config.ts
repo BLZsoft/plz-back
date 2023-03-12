@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const commonEnvSchema = z.object({
   NODE_ENV: z.string().default('test'),
-  PORT: z.number().default(3000)
+  PORT: z.string().regex(/^\d+$/).default('3000')
 });
 
 export type CommonConfig = {

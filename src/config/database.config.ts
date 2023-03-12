@@ -2,7 +2,7 @@ import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 
 export const databaseEnvSchema = z.object({
-  DATABASE_URL: z.string().startsWith('postgresql://')
+  DATABASE_URL: z.string().startsWith('postgres')
 });
 
 export type DatabaseConfig = {
