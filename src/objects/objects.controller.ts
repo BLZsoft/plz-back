@@ -11,13 +11,14 @@ import {
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { UserNotFoundException } from 'common/exceptions/user-not-found.exception';
 import {
   ApiOkPaginatedResponse,
   Pagination,
   PaginationDto,
   PaginationResultDto
 } from 'common/pagination';
+import { Authorized } from 'logto';
+import { UserNotFoundException } from 'logto/exceptions';
 
 import { CreateObjectDto } from './dto/create-object.dto';
 import { CreateOwnerDto } from './dto/create-owner.dto';
@@ -31,6 +32,7 @@ import { ObjectsService } from './objects.service';
 
 @ApiTags('objects')
 @Controller('objects')
+@Authorized()
 export class ObjectsController {
   constructor(private readonly objectsService: ObjectsService) {}
 
