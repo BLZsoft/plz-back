@@ -3,38 +3,24 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { NextFunction, Request, Response } from 'express';
 
-import { LogtoConfig } from 'config/logto.config';
-import { SwaggerConfig } from 'config/swagger.config';
+import { CommonConfig } from './config/common.config';
 
 export const initializeSwagger = (app: NestExpressApplication): void => {
-  const config = app.get(ConfigService);
+  const configService = app.get(ConfigService);
+  const commonConfig = configService.get<CommonConfig>('common');
 
-  const logtoConfig = config.get<LogtoConfig>('logto');
-  const swaggerConfig = config.get<SwaggerConfig>('swagger');
-
-  const swaggerDocumentConfig = new DocumentBuilder()
-    .addOAuth2({
-      type: 'oauth2',
-      flows: {
-        authorizationCode: {
-          authorizationUrl: logtoConfig.authUrl,
-          tokenUrl: logtoConfig.tokenUrl,
-          refreshUrl: logtoConfig.tokenUrl,
-          scopes: swaggerConfig.scopes.reduce(
-            (acc, scope) => ({ ...acc, [scope]: '' }),
-            {}
-          )
-        }
-      }
-    })
+  const swaggerDocumentBuilder = new DocumentBuilder()
     .setTitle('Пожликбез API')
     .setDescription('API спецификация пожликбез.рф')
-    .setVersion('1.0')
-    .build();
+    .setVersion('1.0');
+
+  if (!commonConfig.testToken) {
+    swaggerDocumentBuilder.addBearerAuth();
+  }
 
   const swaggerDocument = SwaggerModule.createDocument(
     app,
-    swaggerDocumentConfig
+    swaggerDocumentBuilder.build()
   );
 
   const expressApp = app.getHttpAdapter();
@@ -48,14 +34,6 @@ export const initializeSwagger = (app: NestExpressApplication): void => {
   });
 
   SwaggerModule.setup('', app, swaggerDocument, {
-    useGlobalPrefix: true,
-    swaggerOptions: {
-      initOAuth: {
-        usePkceWithAuthorizationCodeGrant: true,
-        clientId: swaggerConfig.clientId,
-        clientSecret: swaggerConfig.clientSecret,
-        scopes: swaggerConfig.scopes
-      }
-    }
+    useGlobalPrefix: true
   });
 };
