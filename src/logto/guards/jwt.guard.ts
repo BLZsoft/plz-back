@@ -11,6 +11,9 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { CommonConfig } from 'config/common.config';
 import { LogtoConfig } from 'config/logto.config';
 
+import { getTestToken } from '../logto.consts';
+import { TokenPayload } from '../token-payload';
+
 @Injectable()
 export class JwtGuard implements CanActivate {
   private readonly logtoConfig: LogtoConfig;
@@ -22,24 +25,26 @@ export class JwtGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    try {
-      const request = context.switchToHttp().getRequest();
-      const token = this.getToken(request);
+    const request: Request = context.switchToHttp().getRequest();
 
-      if (token === this.commonConfig.testJwt) {
-        return true;
-      }
+    if (this.commonConfig.testToken) {
+      request.token = getTestToken(this.logtoConfig);
+      return true;
+    }
+
+    try {
+      const token = this.getToken(request);
 
       const { payload } = await jwtVerify(
         token,
-        createRemoteJWKSet(this.logtoConfig.jwksUri),
+        createRemoteJWKSet(this.logtoConfig.jwksUrl),
         {
           issuer: this.logtoConfig.issuer,
           audience: this.logtoConfig.audience
         }
       );
 
-      request.user = payload;
+      request.token = payload as TokenPayload;
 
       return true;
     } catch (e) {

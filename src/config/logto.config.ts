@@ -4,20 +4,22 @@ import { z } from 'zod';
 
 export const logtoEnvSchema = z.object({
   LOGTO_URL: z.string().url(),
-  LOGTO_AUDIENCE: z.string().url()
+  LOGTO_AUDIENCE: z.string().url(),
+  LOGTO_ISSUER_ENDPOINT: z.string().default('/oidc'),
+  LOGTO_JWKS_ENDPOINT: z.string().default('/oidc/jwks')
 });
 
 export type LogtoConfig = {
-  jwksUri: URL;
   issuer: string;
   audience: string;
+  jwksUrl: URL;
 };
 
 export const logtoConfig = registerAs(
   'logto',
   (): LogtoConfig => ({
-    jwksUri: new URL(process.env.LOGTO_URL + '/oidc/jwks'),
-    issuer: process.env.LOGTO_URL + '/oidc',
-    audience: process.env.LOGTO_AUDIENCE
+    issuer: process.env.LOGTO_URL + process.env.LOGTO_ISSUER_ENDPOINT,
+    audience: process.env.LOGTO_AUDIENCE,
+    jwksUrl: new URL(process.env.LOGTO_URL + process.env.LOGTO_JWKS_ENDPOINT)
   })
 );
