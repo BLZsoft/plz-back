@@ -8,11 +8,22 @@ type ExceptionOrExceptionArrayFunc<T extends HttpException> = () =>
   | Exception<T>
   | Exception<T>[];
 
-export function ApiExceptionClass<T extends HttpException>(
+export function ApiExceptionFix<T extends HttpException>(
   exceptions: ExceptionOrExceptionArrayFunc<T>,
   options?: { description: string }
 ) {
-  return function (target: new (...params: any[]) => T): void {
+  return function (
+    target: new (...params: any[]) => T,
+    propertyKey?: string,
+    descriptor?: PropertyDescriptor
+  ): void {
+    // Method decorator
+    if (propertyKey && descriptor) {
+      ApiExceptionBase(exceptions, options)(target, propertyKey, descriptor);
+      return;
+    }
+
+    // Class decorator
     for (const key of Object.getOwnPropertyNames(target.prototype)) {
       const methodDescriptor = Object.getOwnPropertyDescriptor(
         target.prototype,
