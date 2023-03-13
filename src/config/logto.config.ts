@@ -1,5 +1,4 @@
 import { registerAs } from '@nestjs/config';
-import * as process from 'process';
 import { z } from 'zod';
 
 export const logtoEnvSchema = z.object({
@@ -18,7 +17,8 @@ export type LogtoConfig = {
 export const logtoConfig = registerAs(
   'logto',
   (): LogtoConfig => ({
-    issuer: process.env.LOGTO_URL + process.env.LOGTO_ISSUER_ENDPOINT,
+    issuer: new URL(process.env.LOGTO_URL + process.env.LOGTO_ISSUER_ENDPOINT)
+      .href,
     audience: process.env.LOGTO_AUDIENCE,
     jwksUrl: new URL(process.env.LOGTO_URL + process.env.LOGTO_JWKS_ENDPOINT)
   })
