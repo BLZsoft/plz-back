@@ -8,8 +8,6 @@ import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
 import { WithOwnerEntity } from './entities/owner.entity';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
-import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
-import { OwnerDeletionException } from './exceptions/owner-deletion.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
 
 @Injectable()
@@ -24,7 +22,7 @@ export class ObjectsService {
       data: {
         ...createObjectDto,
         owners: {
-          create: [{ userId: ownerId, author: true }]
+          create: [{ id: ownerId, author: true }]
         }
       }
     });
@@ -48,11 +46,36 @@ export class ObjectsService {
     return { data, total };
   }
 
+  async findByOwner(
+    ownerId: string,
+    { skip, take }: PaginationDto
+  ): Promise<PaginationResultDto<ObjectEntity>> {
+    const filter = {
+      owners: {
+        some: { id: ownerId }
+      }
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.object.findMany({
+        where: filter,
+        orderBy: {
+          id: 'asc'
+        },
+        skip,
+        take
+      }),
+      this.prisma.object.count({
+        where: filter
+      })
+    ]);
+
+    return { data, total };
+  }
+
   async findOne(id: number): Promise<ObjectEntity> {
     const result = await this.prisma.object.findUnique({
-      where: {
-        id
-      }
+      where: { id }
     });
 
     if (!result) {
@@ -68,9 +91,7 @@ export class ObjectsService {
   ): Promise<ObjectEntity> {
     try {
       return await this.prisma.object.update({
-        where: {
-          id
-        },
+        where: { id },
         data: updateObjectDto
       });
     } catch {
@@ -81,8 +102,65 @@ export class ObjectsService {
   async remove(id: number): Promise<ObjectEntity> {
     try {
       return await this.prisma.object.delete({
-        where: {
-          id
+        where: { id }
+      });
+    } catch {
+      throw new ObjectNotFoundException();
+    }
+  }
+
+  async findOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
+    const result = this.prisma.ownersOnObject.findUnique({
+      where: {
+        id_objectId: {
+          id,
+          objectId
+        }
+      }
+    });
+
+    if (!result) {
+      throw new OwnerNotFoundException();
+    }
+
+    return result;
+  }
+
+  async findAllOwners(
+    id: number,
+    { skip, take }: PaginationDto
+  ): Promise<PaginationResultDto<WithOwnerEntity>> {
+    try {
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.ownersOnObject.findMany({
+          where: {
+            objectId: id
+          },
+          select: {
+            id: true,
+            author: true
+          },
+          skip,
+          take
+        }),
+        this.prisma.ownersOnObject.count()
+      ]);
+
+      return {
+        data,
+        total
+      };
+    } catch (e) {
+      throw new ObjectNotFoundException();
+    }
+  }
+
+  async addOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
+    try {
+      return await this.prisma.ownersOnObject.create({
+        data: {
+          id,
+          objectId
         }
       });
     } catch {
@@ -90,90 +168,18 @@ export class ObjectsService {
     }
   }
 
-  async getOwners(
-    id: number,
-    { skip, take }: PaginationDto
-  ): Promise<PaginationResultDto<WithOwnerEntity>> {
-    const result = await this.prisma.object.findUnique({
-      where: {
-        id
-      },
-      include: {
-        _count: true,
-        owners: {
-          skip,
-          take,
-          orderBy: {
-            userId: 'asc'
-          }
-        }
-      }
-    });
-
-    if (!result) {
-      throw new ObjectNotFoundException();
-    }
-
-    return {
-      data: result.owners.map((owner) => ({
-        id: owner.userId,
-        author: owner.author
-      })),
-      total: result._count.owners
-    };
-  }
-
-  async addOwner(id: number, userId: string): Promise<WithOwnerEntity> {
-    //TODO: Logto managment API request to check if user exists
-
-    let result: ObjectEntity;
+  async removeOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
     try {
-      result = await this.prisma.object.update({
+      return await this.prisma.ownersOnObject.delete({
         where: {
-          id
-        },
-        data: {
-          owners: {
-            create: [{ userId }]
+          id_objectId: {
+            id,
+            objectId
           }
         }
       });
-    } catch (e) {
-      throw new OwnerAlreadyExistsException();
-    }
-
-    if (!result) {
-      throw new ObjectNotFoundException();
-    }
-
-    return { id: userId };
-  }
-
-  async removeOwner(id: number, userId: string): Promise<WithOwnerEntity> {
-    //TODO: Logto managment API request to check if user exists
-
-    const ownerOnObject = await this.prisma.ownersOnObject.findUnique({
-      where: {
-        userId_objectId: { objectId: id, userId }
-      }
-    });
-
-    if (!ownerOnObject) {
-      const object = await this.prisma.object.findUnique({
-        where: { id }
-      });
-
-      if (!object) {
-        throw new ObjectNotFoundException();
-      }
-
+    } catch {
       throw new OwnerNotFoundException();
     }
-
-    if (ownerOnObject.author) {
-      throw new OwnerDeletionException();
-    }
-
-    return { id: ownerOnObject.userId };
   }
 }

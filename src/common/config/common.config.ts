@@ -1,15 +1,17 @@
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { registerAs } from '@nestjs/config';
+import * as process from 'process';
 import { z } from 'zod';
 
 export const commonEnvSchema = z.object({
+  TEST: z.literal('false').or(z.literal('true'))
+.default('false'),
   NODE_ENV: z.string().default('development'),
-  TEST_TOKEN: z.string().default('false'),
-  PORT: z.string().regex(/^\d+$/).default('3000')
+  PORT: z.coerce.number().default(3000)
 });
 
 export type CommonConfig = {
-  testToken: boolean;
+  isTest: boolean;
   environment: string;
   port: number;
   cors: CorsOptions;
@@ -21,11 +23,9 @@ export const commonConfig = registerAs('common', (): CommonConfig => {
     .map(([, value]) => value);
 
   return {
-    testToken:
-      process.env.TEST_TOKEN === '1' ||
-      process.env.TEST_TOKEN?.toLowerCase() === 'true',
+    isTest: process.env.TEST.toLowerCase() === 'true',
     environment: process.env.NODE_ENV,
-    port: parseInt(process.env.PORT, 10),
+    port: Number(process.env.PORT),
     cors: {
       origin: corsOrigins
     }
