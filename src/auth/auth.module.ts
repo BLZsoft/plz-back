@@ -10,8 +10,10 @@ import { TestJwtGuardStrategy } from './guards/strategies/test-jwt-guard.strateg
   providers: [
     {
       provide: JWT_STRATEGY,
-      useFactory: (configService: ConfigService): TestJwtGuardStrategy | JwtGuardStrategy =>
-        configService.get('common.isTest')
+      useFactory: (
+        configService: ConfigService
+      ): TestJwtGuardStrategy | JwtGuardStrategy =>
+        configService.get<boolean>('common.isTest')
           ? new TestJwtGuardStrategy(configService)
           : new JwtGuardStrategy(configService),
       inject: [ConfigService]
@@ -21,4 +23,5 @@ import { TestJwtGuardStrategy } from './guards/strategies/test-jwt-guard.strateg
   ],
   exports: [JWT_STRATEGY, JwtGuard, ScopeGuard]
 })
-export class AuthModule {}
+export class AuthModule {
+}
