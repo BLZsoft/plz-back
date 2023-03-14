@@ -1,11 +1,12 @@
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { registerAs } from '@nestjs/config';
-import * as process from 'process';
 import { z } from 'zod';
 
 export const commonEnvSchema = z.object({
-  TEST: z.literal('false').or(z.literal('true'))
-.default('false'),
+  TEST: z
+    .literal('false')
+    .or(z.literal('true'))
+    .default('false'),
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(3000)
 });

@@ -12,7 +12,6 @@ import {
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { Authorized, Scope, Token, TokenPayload } from 'auth';
-import { UserNotFoundException } from 'auth/exceptions';
 import {
   ApiOkPaginatedResponse,
   Pagination,
@@ -207,9 +206,6 @@ export class ObjectsController {
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
-  })
-  @ApiException(() => UserNotFoundException, {
-    description: 'Пользователь с указанным id не найден.'
   })
   addOwner(
     @Token() token: TokenPayload,
