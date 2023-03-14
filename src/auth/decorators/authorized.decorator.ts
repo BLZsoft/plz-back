@@ -1,20 +1,11 @@
-import {
-  applyDecorators,
-  ForbiddenException,
-  SetMetadata,
-  UnauthorizedException,
-  UseGuards
-} from '@nestjs/common';
+import { applyDecorators, ForbiddenException, SetMetadata, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
-import { ApiExceptionFix } from 'common/api-exception-class.decorator';
+import { ApiExceptionFix } from './api-exception-fix.decorator';
+import { JwtGuard } from '../guards/jwt.guard';
+import { ScopeGuard } from '../guards/scope.guard';
 
-import { JwtGuard } from './guards/jwt.guard';
-import { ScopeGuard } from './guards/scope.guard';
-
-export const Authorized = (
-  ...scopes: string[]
-): ClassDecorator & MethodDecorator => {
+export const Authorized = (...scopes: string[]): ClassDecorator & MethodDecorator => {
   const decorators = [
     UseGuards(JwtGuard),
     SetMetadata('scopes', scopes),

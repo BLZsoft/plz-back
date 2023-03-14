@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from 'app.module';
-import { CommonConfig } from 'config/common.config';
+import { Config } from 'common/config';
 
 import { initializeSwagger } from './swagger';
 
@@ -15,8 +15,8 @@ async function bootstrap(): Promise<void> {
     exclude: [{ path: 'health', method: RequestMethod.GET }]
   });
 
-  const config = app.get(ConfigService);
-  const commonConfig = config.get<CommonConfig>('common');
+  const config = app.get<ConfigService<Config>>(ConfigService);
+  const commonConfig = config.get('common');
 
   app.enableCors(commonConfig.cors);
   initializeSwagger(app);

@@ -3,7 +3,7 @@ import { createModel } from 'schemix';
 import ObjectModel from './object.model';
 
 export default createModel('OwnersOnObject', (OwnershipModel) => {
-  OwnershipModel.string('userId')
+  OwnershipModel.string('id')
     .int('objectId')
     .relation('object', ObjectModel, {
       fields: ['objectId'],
@@ -11,5 +11,5 @@ export default createModel('OwnersOnObject', (OwnershipModel) => {
       onDelete: 'Cascade'
     })
     .boolean('author', { default: false })
-    .id({ fields: ['userId', 'objectId'] });
+    .id({ fields: ['id', 'objectId'] });
 });

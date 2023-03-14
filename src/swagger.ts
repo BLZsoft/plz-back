@@ -3,18 +3,19 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { NextFunction, Request, Response } from 'express';
 
-import { CommonConfig } from './config/common.config';
+import { Config } from 'common/config';
 
 export const initializeSwagger = (app: NestExpressApplication): void => {
-  const configService = app.get(ConfigService);
-  const commonConfig = configService.get<CommonConfig>('common');
+  const configService = app.get<ConfigService<Config>>(ConfigService);
+  const commonConfig = configService.get('common');
 
   const swaggerDocumentBuilder = new DocumentBuilder()
-    .setTitle('Пожликбез API')
+    .setTitle('пожликбез.рф API')
     .setDescription('API спецификация пожликбез.рф')
-    .setVersion('1.0');
+    .setVersion('1.0')
+    .setContact('evist0', '', 'danil.tankoff@yandex.ru');
 
-  if (!commonConfig.testToken) {
+  if (!commonConfig.isTest) {
     swaggerDocumentBuilder.addBearerAuth();
   }
 
@@ -24,7 +25,6 @@ export const initializeSwagger = (app: NestExpressApplication): void => {
   );
 
   const expressApp = app.getHttpAdapter();
-
   expressApp.use((req: Request, res: Response, next: NextFunction) => {
     if (req.url === '/api') {
       return res.redirect('/api/');

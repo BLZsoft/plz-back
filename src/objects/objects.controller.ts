@@ -11,23 +11,23 @@ import {
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
+import { Authorized, Scope, Token, TokenPayload } from 'auth';
+import { UserNotFoundException } from 'auth/exceptions';
 import {
   ApiOkPaginatedResponse,
   Pagination,
   PaginationDto,
   PaginationResultDto
 } from 'common/pagination';
-import { Authorized } from 'logto';
-import { UserNotFoundException } from 'logto/exceptions';
 
 import { CreateObjectDto } from './dto/create-object.dto';
 import { CreateOwnerDto } from './dto/create-owner.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
 import { CoOwnerEntity, WithOwnerEntity } from './entities/owner.entity';
+import { AuthorDeletionException } from './exceptions/author-deletion.exception';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
 import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
-import { OwnerDeletionException } from './exceptions/owner-deletion.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
 import { ObjectsService } from './objects.service';
 
@@ -37,14 +37,36 @@ import { ObjectsService } from './objects.service';
 export class ObjectsController {
   constructor(private readonly objectsService: ObjectsService) {}
 
+  private async isOwner(userId: string, objectId: number): Promise<boolean> {
+    try {
+      await this.objectsService.findOwner(userId, objectId);
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private async isAuthor(userId: string, objectId: number): Promise<boolean> {
+    try {
+      const owner = await this.objectsService.findOwner(userId, objectId);
+
+      return owner.author;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @Post()
   @ApiCreatedResponse({
     description: 'Объект успешно создан.',
     type: ObjectEntity
   })
-  // TODO: ApiUnprocessableEntityResponse()
-  create(@Body() createObjectDto: CreateObjectDto): Promise<ObjectEntity> {
-    return this.objectsService.create('1', createObjectDto);
+  create(
+    @Token() token: TokenPayload,
+    @Body() createObjectDto: CreateObjectDto
+  ): Promise<ObjectEntity> {
+    return this.objectsService.create(token.sub, createObjectDto);
   }
 
   @Get()
@@ -53,9 +75,18 @@ export class ObjectsController {
     type: ObjectEntity
   })
   find(
+    @Token() token: TokenPayload,
     @Pagination() pagination: PaginationDto
   ): Promise<PaginationResultDto<ObjectEntity>> {
-    return this.objectsService.find(pagination);
+    const canReadAll = token.scopes.some(
+      (scope) => scope === Scope.ReadAllObjects
+    );
+
+    if (canReadAll) {
+      return this.objectsService.find(pagination);
+    }
+
+    return this.objectsService.findByOwner(token.sub, pagination);
   }
 
   @Get(':id')
@@ -66,8 +97,23 @@ export class ObjectsController {
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
   })
-  findOne(@Param('id', new ParseIntPipe()) id: number): Promise<ObjectEntity> {
-    return this.objectsService.findOne(id);
+  async findOne(
+    @Token() token: TokenPayload,
+    @Param('id', new ParseIntPipe()) id: number
+  ): Promise<ObjectEntity> {
+    const canReadAll = token.scopes.some(
+      (scope) => scope === Scope.ReadAllObjects
+    );
+    if (canReadAll) {
+      return this.objectsService.findOne(id);
+    }
+
+    const isOwner = await this.isOwner(token.sub, id);
+    if (isOwner) {
+      return this.objectsService.findOne(id);
+    }
+
+    throw new ObjectNotFoundException();
   }
 
   @Patch(':id')
@@ -78,12 +124,24 @@ export class ObjectsController {
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
   })
-  // TODO: ApiUnprocessableEntityResponse()
-  update(
+  async update(
+    @Token() token: TokenPayload,
     @Param('id', new ParseIntPipe()) id: number,
     @Body() updateObjectDto: UpdateObjectDto
   ): Promise<ObjectEntity> {
-    return this.objectsService.update(id, updateObjectDto);
+    const canWriteAll = token.scopes.some(
+      (scope) => scope === Scope.WriteAllObjects
+    );
+    if (canWriteAll) {
+      return this.objectsService.update(id, updateObjectDto);
+    }
+
+    const isOwner = await this.isOwner(token.sub, id);
+    if (isOwner) {
+      return this.objectsService.update(id, updateObjectDto);
+    }
+
+    throw new ObjectNotFoundException();
   }
 
   @Delete(':id')
@@ -94,11 +152,24 @@ export class ObjectsController {
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
   })
-  remove(@Param('id', new ParseIntPipe()) id: number): Promise<ObjectEntity> {
-    return this.objectsService.remove(id);
+  remove(
+    @Token() token: TokenPayload,
+    @Param('id', new ParseIntPipe()) id: number
+  ): Promise<ObjectEntity> {
+    const canWriteAll = token.scopes.some(
+      (scope) => scope === Scope.WriteAllObjects
+    );
+    if (canWriteAll) {
+      return this.objectsService.remove(id);
+    }
+
+    const isOwner = this.isOwner(token.sub, id);
+    if (isOwner) {
+      return this.objectsService.remove(id);
+    }
   }
 
-  @Get(':id/owners')
+  @Get(':objectId/owners')
   @ApiOkPaginatedResponse({
     description: 'Возвращает список пользователей.',
     type: WithOwnerEntity
@@ -107,13 +178,26 @@ export class ObjectsController {
     description: 'Объект с указанным id не найден.'
   })
   getOwners(
-    @Param('id', new ParseIntPipe()) id: number,
+    @Token() token: TokenPayload,
+    @Param('objectId', new ParseIntPipe()) objectId: number,
     @Pagination() pagination: PaginationDto
   ): Promise<PaginationResultDto<WithOwnerEntity>> {
-    return this.objectsService.getOwners(id, pagination);
+    const canReadAll = token.scopes.some(
+      (scope) => scope === Scope.ReadAllObjects
+    );
+    if (canReadAll) {
+      return this.objectsService.findAllOwners(objectId, pagination);
+    }
+
+    const isOwner = this.isOwner(token.sub, objectId);
+    if (isOwner) {
+      return this.objectsService.findAllOwners(objectId, pagination);
+    }
+
+    throw new ObjectNotFoundException();
   }
 
-  @Post(':id/owners')
+  @Post(':objectId/owners')
   @ApiCreatedResponse({
     description: 'Добавляет пользователя к объекту.',
     type: CoOwnerEntity
@@ -128,13 +212,26 @@ export class ObjectsController {
     description: 'Пользователь с указанным id не найден.'
   })
   addOwner(
-    @Param('id', new ParseIntPipe()) id: number,
-    @Body() { id: userId }: CreateOwnerDto
+    @Token() token: TokenPayload,
+    @Param('objectId', new ParseIntPipe()) objectId: number,
+    @Body() { id }: CreateOwnerDto
   ): Promise<CoOwnerEntity> {
-    return this.objectsService.addOwner(id, userId);
+    const canWriteAll = token.scopes.some(
+      (scope) => scope === Scope.WriteAllObjects
+    );
+    if (canWriteAll) {
+      return this.objectsService.addOwner(id, objectId);
+    }
+
+    const isOwner = this.isOwner(token.sub, objectId);
+    if (isOwner) {
+      return this.objectsService.addOwner(id, objectId);
+    }
+
+    throw new ObjectNotFoundException();
   }
 
-  @Delete(':id/owners/:userId')
+  @Delete(':objectId/owners/:id')
   @ApiOkResponse({
     description: 'Открепляет пользователя от объекта.',
     type: CoOwnerEntity
@@ -143,15 +240,33 @@ export class ObjectsController {
     description: 'Объект с указанным id не найден.'
   })
   @ApiException(() => OwnerNotFoundException, {
-    description: 'Совладелец с указанным id не найден.'
+    description: 'Владелец с указанным id не найден.'
   })
-  @ApiException(() => OwnerDeletionException, {
+  @ApiException(() => AuthorDeletionException, {
     description: 'Нельзя открепить автора.'
   })
   removeOwner(
-    @Param('id', new ParseIntPipe()) id: number,
-    @Param('userId') userId: string
+    @Token() token: TokenPayload,
+    @Param('objectId', new ParseIntPipe()) objectId: number,
+    @Param('id') id: string
   ): Promise<CoOwnerEntity> {
-    return this.objectsService.removeOwner(id, userId);
+    const isAuthorDelete = this.isAuthor(id, objectId);
+    if (isAuthorDelete) {
+      throw new AuthorDeletionException();
+    }
+
+    const canWriteAll = token.scopes.some(
+      (scope) => scope === Scope.WriteAllObjects
+    );
+    if (canWriteAll) {
+      return this.objectsService.removeOwner(id, objectId);
+    }
+
+    const isOwner = this.isOwner(token.sub, objectId);
+    if (isOwner) {
+      return this.objectsService.removeOwner(id, objectId);
+    }
+
+    throw new ObjectNotFoundException();
   }
 }

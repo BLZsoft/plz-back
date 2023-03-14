@@ -1,10 +1,10 @@
 -- CreateTable
 CREATE TABLE "OwnersOnObject" (
-    "userId" TEXT NOT NULL,
+    "id" TEXT NOT NULL,
     "objectId" INTEGER NOT NULL,
     "author" BOOLEAN NOT NULL DEFAULT false,
 
-    CONSTRAINT "OwnersOnObject_pkey" PRIMARY KEY ("userId","objectId")
+    CONSTRAINT "OwnersOnObject_pkey" PRIMARY KEY ("id","objectId")
 );
 
 -- CreateTable
@@ -29,4 +29,4 @@ CREATE TABLE "Object" (
 );
 
 -- AddForeignKey
-ALTER TABLE "OwnersOnObject" ADD CONSTRAINT "OwnersOnObject_objectId_fkey" FOREIGN KEY ("objectId") REFERENCES "Object"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OwnersOnObject" ADD CONSTRAINT "OwnersOnObject_objectId_fkey" FOREIGN KEY ("objectId") REFERENCES "Object"("id") ON DELETE CASCADE ON UPDATE CASCADE;

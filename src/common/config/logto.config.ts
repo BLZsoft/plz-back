@@ -17,8 +17,7 @@ export type LogtoConfig = {
 export const logtoConfig = registerAs(
   'logto',
   (): LogtoConfig => ({
-    issuer: new URL(process.env.LOGTO_URL + process.env.LOGTO_ISSUER_ENDPOINT)
-      .href,
+    issuer: new URL(process.env.LOGTO_URL + process.env.LOGTO_ISSUER_ENDPOINT).href,
     audience: process.env.LOGTO_AUDIENCE,
     jwksUrl: new URL(process.env.LOGTO_URL + process.env.LOGTO_JWKS_ENDPOINT)
   })

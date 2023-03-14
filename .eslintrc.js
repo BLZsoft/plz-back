@@ -15,12 +15,11 @@ module.exports = {
       node: true
     }
   },
-  plugins: ['@typescript-eslint/eslint-plugin', 'import'],
+  plugins: ['@typescript-eslint/eslint-plugin', 'import', 'prettier'],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:import/recommended',
     'plugin:import/typescript',
-    'plugin:prettier/recommended'
   ],
   env: {
     node: true,
@@ -32,19 +31,13 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'error',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    'sort-imports': [
-      'error',
-      { ignoreCase: true, ignoreDeclarationSort: true }
-    ],
+    'sort-imports': ['error',
+      { ignoreCase: true, ignoreDeclarationSort: true }],
     'import/order': [
       'error',
       {
-        groups: [
-          ['external', 'builtin'],
-          'internal',
-          ['sibling', 'parent'],
-          'index'
-        ],
+        groups: [['external', 'builtin'], 'internal', ['sibling', 'parent'],
+          'index'],
         'newlines-between': 'always',
         alphabetize: {
           order: 'asc',
@@ -54,7 +47,8 @@ module.exports = {
     ],
     'import/no-default-export': 'error',
     'import/no-self-import': 'error',
-    'import/no-duplicates': 'error'
+    'import/no-duplicates': 'error',
+    'newline-per-chained-call': 'error'
   },
   overrides: [
     {
@@ -63,6 +57,12 @@ module.exports = {
         'no-console': 'off',
         'import/no-default-export': 'off',
         'import/default': 'error'
+      }
+    },
+    {
+      files: ['*.d.ts'],
+      rules: {
+        '@typescript-eslint/no-empty-interface': 'off'
       }
     }
   ]
