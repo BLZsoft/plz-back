@@ -1,7 +1,7 @@
+import { ApiException } from '@nanogiants/nestjs-swagger-api-exception-decorator';
 import { applyDecorators, ForbiddenException, SetMetadata, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
-import { ApiExceptionFix } from './api-exception-fix.decorator';
 import { JwtGuard } from '../guards/jwt.guard';
 import { ScopeGuard } from '../guards/scope.guard';
 
@@ -11,14 +11,14 @@ export const Authorized = (...scopes: string[]): ClassDecorator & MethodDecorato
     SetMetadata('scopes', scopes),
     UseGuards(ScopeGuard),
     ApiBearerAuth(),
-    ApiExceptionFix(() => new UnauthorizedException('UNAUTHORIZED'), {
+    ApiException(() => new UnauthorizedException('UNAUTHORIZED'), {
       description: 'Не был передан access token.'
     })
   ];
 
   if (scopes.length > 0) {
     decorators.push(
-      ApiExceptionFix(() => new ForbiddenException('FORBIDDEN'), {
+      ApiException(() => new ForbiddenException('FORBIDDEN'), {
         description: 'Недостаточно прав.'
       })
     );

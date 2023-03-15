@@ -9,7 +9,7 @@ import {
   Patch,
   Post
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Authorized, Scope, Token, TokenPayload } from 'auth';
 import {
@@ -23,7 +23,7 @@ import { CreateObjectDto } from './dto/create-object.dto';
 import { CreateOwnerDto } from './dto/create-owner.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
-import { CoOwnerEntity, WithOwnerEntity } from './entities/owner.entity';
+import { OwnerEntity } from './entities/owner.entity';
 import { AuthorDeletionException } from './exceptions/author-deletion.exception';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
 import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
@@ -34,7 +34,8 @@ import { ObjectsService } from './objects.service';
 @Controller('objects')
 @Authorized()
 export class ObjectsController {
-  constructor(private readonly objectsService: ObjectsService) {}
+  constructor(private readonly objectsService: ObjectsService) {
+  }
 
   private async isOwner(userId: string, objectId: number): Promise<boolean> {
     try {
@@ -57,9 +58,12 @@ export class ObjectsController {
   }
 
   @Post()
+  @ApiOperation({
+    summary: 'Создает объект.'
+  })
   @ApiCreatedResponse({
-    description: 'Объект успешно создан.',
-    type: ObjectEntity
+    type: ObjectEntity,
+    description: 'Объект успешно создан.'
   })
   create(
     @Token() token: TokenPayload,
@@ -69,9 +73,12 @@ export class ObjectsController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'Возвращает список объектов.'
+  })
   @ApiOkPaginatedResponse({
-    description: 'Возвращает список объектов.',
-    type: ObjectEntity
+    type: ObjectEntity,
+    description: 'Список объектов.'
   })
   find(
     @Token() token: TokenPayload,
@@ -89,9 +96,12 @@ export class ObjectsController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Возвращает указанный объект.'
+  })
   @ApiOkResponse({
-    description: 'Возвращает объект по указанному id.',
-    type: ObjectEntity
+    type: ObjectEntity,
+    description: 'Найденный объект.'
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
@@ -116,8 +126,9 @@ export class ObjectsController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Обновляет указанный объект' })
   @ApiOkResponse({
-    description: 'Обновляет объект с указанным id.',
+    description: 'Объект успешно обновлен.',
     type: ObjectEntity
   })
   @ApiException(() => ObjectNotFoundException, {
@@ -144,8 +155,11 @@ export class ObjectsController {
   }
 
   @Delete(':id')
+  @ApiOperation({
+    summary: 'Удаляет указанный объект.'
+  })
   @ApiOkResponse({
-    description: 'Удаляет объект с указанным id.',
+    description: 'Объект успешно удален.',
     type: ObjectEntity
   })
   @ApiException(() => ObjectNotFoundException, {
@@ -169,9 +183,12 @@ export class ObjectsController {
   }
 
   @Get(':objectId/owners')
+  @ApiOperation({
+    summary: 'Возвращает владельцев указанного объекта.'
+  })
   @ApiOkPaginatedResponse({
-    description: 'Возвращает список пользователей.',
-    type: WithOwnerEntity
+    description: 'Список владельцев объекта.',
+    type: OwnerEntity
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
@@ -180,7 +197,7 @@ export class ObjectsController {
     @Token() token: TokenPayload,
     @Param('objectId', new ParseIntPipe()) objectId: number,
     @Pagination() pagination: PaginationDto
-  ): Promise<PaginationResultDto<WithOwnerEntity>> {
+  ): Promise<PaginationResultDto<OwnerEntity>> {
     const canReadAll = token.scopes.some(
       (scope) => scope === Scope.ReadAllObjects
     );
@@ -197,12 +214,15 @@ export class ObjectsController {
   }
 
   @Post(':objectId/owners')
+  @ApiOperation({
+    summary: 'Добавляет владельца к объекту.'
+  })
   @ApiCreatedResponse({
-    description: 'Добавляет пользователя к объекту.',
-    type: CoOwnerEntity
+    description: 'Добавленный владелец.',
+    type: OwnerEntity
   })
   @ApiException(() => OwnerAlreadyExistsException, {
-    description: 'Пользователь уже имеет доступ к объекту.'
+    description: 'Владелец уже существует.'
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
@@ -211,7 +231,7 @@ export class ObjectsController {
     @Token() token: TokenPayload,
     @Param('objectId', new ParseIntPipe()) objectId: number,
     @Body() { id }: CreateOwnerDto
-  ): Promise<CoOwnerEntity> {
+  ): Promise<OwnerEntity> {
     const canWriteAll = token.scopes.some(
       (scope) => scope === Scope.WriteAllObjects
     );
@@ -228,9 +248,10 @@ export class ObjectsController {
   }
 
   @Delete(':objectId/owners/:id')
+  @ApiOperation({ summary: 'Удаляет владельца из объекта.' })
   @ApiOkResponse({
-    description: 'Открепляет пользователя от объекта.',
-    type: CoOwnerEntity
+    type: OwnerEntity,
+    description: 'Удаленный владелец.'
   })
   @ApiException(() => ObjectNotFoundException, {
     description: 'Объект с указанным id не найден.'
@@ -239,13 +260,13 @@ export class ObjectsController {
     description: 'Владелец с указанным id не найден.'
   })
   @ApiException(() => AuthorDeletionException, {
-    description: 'Нельзя открепить автора.'
+    description: 'Нельзя удалить автора объекта.'
   })
   removeOwner(
     @Token() token: TokenPayload,
     @Param('objectId', new ParseIntPipe()) objectId: number,
     @Param('id') id: string
-  ): Promise<CoOwnerEntity> {
+  ): Promise<OwnerEntity> {
     const isAuthorDelete = this.isAuthor(id, objectId);
     if (isAuthorDelete) {
       throw new AuthorDeletionException();

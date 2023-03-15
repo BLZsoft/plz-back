@@ -6,7 +6,7 @@ import { PaginationDto, PaginationResultDto } from 'common/pagination';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
 import { ObjectEntity } from './entities/object.entity';
-import { WithOwnerEntity } from './entities/owner.entity';
+import { OwnerEntity } from './entities/owner.entity';
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
 
@@ -109,7 +109,7 @@ export class ObjectsService {
     }
   }
 
-  async findOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
+  async findOwner(id: string, objectId: number): Promise<OwnerEntity> {
     const result = this.prisma.ownersOnObject.findUnique({
       where: {
         id_objectId: {
@@ -129,7 +129,7 @@ export class ObjectsService {
   async findAllOwners(
     id: number,
     { skip, take }: PaginationDto
-  ): Promise<PaginationResultDto<WithOwnerEntity>> {
+  ): Promise<PaginationResultDto<OwnerEntity>> {
     try {
       const [data, total] = await this.prisma.$transaction([
         this.prisma.ownersOnObject.findMany({
@@ -155,7 +155,7 @@ export class ObjectsService {
     }
   }
 
-  async addOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
+  async addOwner(id: string, objectId: number): Promise<OwnerEntity> {
     try {
       return await this.prisma.ownersOnObject.create({
         data: {
@@ -168,7 +168,7 @@ export class ObjectsService {
     }
   }
 
-  async removeOwner(id: string, objectId: number): Promise<WithOwnerEntity> {
+  async removeOwner(id: string, objectId: number): Promise<OwnerEntity> {
     try {
       return await this.prisma.ownersOnObject.delete({
         where: {
