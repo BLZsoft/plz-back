@@ -1,13 +1,27 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { HttpModule } from 'nestjs-http-promise';
 
+import { AuthService } from './auth.service';
 import { JWT_STRATEGY, JwtGuard } from './guards/jwt.guard';
 import { ScopeGuard } from './guards/scope.guard';
 import { JwtGuardStrategy } from './guards/strategies/jwt-guard.strategy';
 import { TestJwtGuardStrategy } from './guards/strategies/test-jwt-guard.strategy';
 
 @Module({
+  imports: [
+    HttpModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        timeout: 3_000,
+        retries: 3,
+        baseURL: configService.getOrThrow('m2m.baseUrl')
+      })
+    })
+  ],
   providers: [
+    AuthService,
     {
       provide: JWT_STRATEGY,
       useFactory: (
@@ -21,7 +35,6 @@ import { TestJwtGuardStrategy } from './guards/strategies/test-jwt-guard.strateg
     JwtGuard,
     ScopeGuard
   ],
-  exports: [JWT_STRATEGY, JwtGuard, ScopeGuard]
+  exports: [AuthService, JWT_STRATEGY, JwtGuard, ScopeGuard]
 })
-export class AuthModule {
-}
+export class AuthModule {}

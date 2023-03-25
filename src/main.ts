@@ -16,7 +16,7 @@ async function bootstrap(): Promise<void> {
   });
 
   const config = app.get<ConfigService<Config>>(ConfigService);
-  const commonConfig = config.get('common');
+  const commonConfig = config.getOrThrow('common');
 
   app.enableCors(commonConfig.cors);
   initializeSwagger(app);

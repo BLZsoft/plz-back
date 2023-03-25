@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { Authorized, Scope, Token, TokenPayload } from 'auth';
+import { Authorized, Token, TokenPayload } from 'auth';
 import {
   ApiOkPaginatedResponse,
   Pagination,
@@ -28,9 +28,10 @@ import { AuthorDeletionException } from './exceptions/author-deletion.exception'
 import { ObjectNotFoundException } from './exceptions/object-not-found.exception';
 import { OwnerAlreadyExistsException } from './exceptions/owner-already-exists.exception';
 import { OwnerNotFoundException } from './exceptions/owner-not-found.exception';
+import { ObjectsScopes } from './objects.scopes';
 import { ObjectsService } from './objects.service';
 
-@ApiTags('objects')
+@ApiTags('Объекты')
 @Controller('objects')
 @Authorized()
 export class ObjectsController {
@@ -85,7 +86,7 @@ export class ObjectsController {
     @Pagination() pagination: PaginationDto
   ): Promise<PaginationResultDto<ObjectEntity>> {
     const canReadAll = token.scopes.some(
-      (scope) => scope === Scope.ReadAllObjects
+      (scope) => scope === ObjectsScopes.ReadAllObjects
     );
 
     if (canReadAll) {
@@ -111,7 +112,7 @@ export class ObjectsController {
     @Param('id', new ParseIntPipe()) id: number
   ): Promise<ObjectEntity> {
     const canReadAll = token.scopes.some(
-      (scope) => scope === Scope.ReadAllObjects
+      (scope) => scope === ObjectsScopes.ReadAllObjects
     );
     if (canReadAll) {
       return this.objectsService.findOne(id);
@@ -140,7 +141,7 @@ export class ObjectsController {
     @Body() updateObjectDto: UpdateObjectDto
   ): Promise<ObjectEntity> {
     const canWriteAll = token.scopes.some(
-      (scope) => scope === Scope.WriteAllObjects
+      (scope) => scope === ObjectsScopes.WriteAllObjects
     );
     if (canWriteAll) {
       return this.objectsService.update(id, updateObjectDto);
@@ -170,7 +171,7 @@ export class ObjectsController {
     @Param('id', new ParseIntPipe()) id: number
   ): Promise<ObjectEntity> {
     const canWriteAll = token.scopes.some(
-      (scope) => scope === Scope.WriteAllObjects
+      (scope) => scope === ObjectsScopes.WriteAllObjects
     );
     if (canWriteAll) {
       return this.objectsService.remove(id);
@@ -199,7 +200,7 @@ export class ObjectsController {
     @Pagination() pagination: PaginationDto
   ): Promise<PaginationResultDto<OwnerEntity>> {
     const canReadAll = token.scopes.some(
-      (scope) => scope === Scope.ReadAllObjects
+      (scope) => scope === ObjectsScopes.ReadAllObjects
     );
     if (canReadAll) {
       return this.objectsService.findAllOwners(objectId, pagination);
@@ -233,7 +234,7 @@ export class ObjectsController {
     @Body() { id }: CreateOwnerDto
   ): Promise<OwnerEntity> {
     const canWriteAll = token.scopes.some(
-      (scope) => scope === Scope.WriteAllObjects
+      (scope) => scope === ObjectsScopes.WriteAllObjects
     );
     if (canWriteAll) {
       return this.objectsService.addOwner(id, objectId);
@@ -273,7 +274,7 @@ export class ObjectsController {
     }
 
     const canWriteAll = token.scopes.some(
-      (scope) => scope === Scope.WriteAllObjects
+      (scope) => scope === ObjectsScopes.WriteAllObjects
     );
     if (canWriteAll) {
       return this.objectsService.removeOwner(id, objectId);

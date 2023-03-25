@@ -1,6 +1,5 @@
 export { AuthModule } from './auth.module';
-
-export { Scope } from './auth.consts';
+export { AuthService } from './auth.service';
 
 export { Authorized } from './decorators/authorized.decorator';
 
