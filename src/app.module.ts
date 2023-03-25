@@ -4,6 +4,7 @@ import { PrismaModule } from 'nestjs-prisma';
 
 import { configuration, validate } from 'common/config';
 import { ObjectsModule } from 'objects/objects.module';
+import { ProfileModule } from 'profile/profile.module';
 
 @Module({
   imports: [
@@ -13,9 +14,11 @@ import { ObjectsModule } from 'objects/objects.module';
       validate
     }),
     PrismaModule.forRoot(),
-    ObjectsModule
+    ObjectsModule,
+    ProfileModule
   ],
   controllers: [],
   providers: []
 })
-export class AppModule {}
+export class AppModule {
+}

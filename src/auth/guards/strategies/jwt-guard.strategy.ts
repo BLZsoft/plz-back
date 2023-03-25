@@ -1,15 +1,19 @@
-import { CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-import { Config, LogtoConfig } from 'common/config';
+import { AuthorizationConfig, Config } from 'common/config';
 
 export class JwtGuardStrategy implements CanActivate {
-  private readonly logtoConfig: LogtoConfig;
+  private readonly authConfig: AuthorizationConfig;
 
   constructor(configService: ConfigService<Config>) {
-    this.logtoConfig = configService.get('logto');
+    this.authConfig = configService.getOrThrow<AuthorizationConfig>('auth');
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -18,10 +22,14 @@ export class JwtGuardStrategy implements CanActivate {
     try {
       const token = this.getToken(request);
 
-      const { payload } = await jwtVerify(token, createRemoteJWKSet(this.logtoConfig.jwksUrl), {
-        issuer: this.logtoConfig.issuer,
-        audience: this.logtoConfig.audience
-      });
+      const { payload } = await jwtVerify(
+        token,
+        createRemoteJWKSet(this.authConfig.jwksUrl),
+        {
+          issuer: this.authConfig.issuer,
+          audience: this.authConfig.audience
+        }
+      );
 
       request.token = {
         ...payload,

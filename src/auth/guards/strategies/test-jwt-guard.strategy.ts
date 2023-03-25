@@ -2,13 +2,13 @@ import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 
-import { Config, LogtoConfig } from 'common/config';
+import { AuthorizationConfig, Config } from 'common/config';
 
 export class TestJwtGuardStrategy implements CanActivate {
-  private readonly logtoConfig: LogtoConfig;
+  private readonly authConfig: AuthorizationConfig;
 
   constructor(configService: ConfigService<Config>) {
-    this.logtoConfig = configService.get('logto');
+    this.authConfig = configService.getOrThrow<AuthorizationConfig>('auth');
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -21,8 +21,8 @@ export class TestJwtGuardStrategy implements CanActivate {
       exp: Math.ceil((Date.now() + 3_600_000) / 1000),
       scopes: ['read:resource', 'write:resource'],
       client_id: 'test-application',
-      iss: this.logtoConfig.issuer,
-      aud: this.logtoConfig.audience
+      iss: this.authConfig.issuer,
+      aud: this.authConfig.audience
     };
 
     return true;
