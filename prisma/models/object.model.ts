@@ -19,5 +19,7 @@ export default createModel('Object', (ObjectModel) => {
     .float('height')
     .float('volume')
     .string('class')
-    .string('degree');
+    .string('degree')
+    .string('address')
+    .string('typeOfBuild');
 });

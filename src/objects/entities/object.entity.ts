@@ -46,4 +46,10 @@ export class ObjectEntity implements Object {
 
   @ApiProperty()
   degree: string;
+
+  @ApiProperty()
+  address: string;
+
+  @ApiProperty()
+  typeOfBuild: string;
 }

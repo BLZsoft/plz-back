@@ -30,4 +30,8 @@ export class CreateObjectDto implements Prisma.ObjectCreateInput {
   class: string;
   @ApiProperty()
   degree: string;
+  @ApiProperty()
+  address: string;
+  @ApiProperty()
+  typeOfBuild: string;
 }
